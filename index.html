@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Noreira - Telegram Mini App</title>
+    <!-- Telegram WebApp Script -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <!-- Unlock Protocol Configuration -->
+    <script>
+      // Set up Unlock Protocol configuration for EurC payments
+      window.unlockProtocolConfig = {
+        network: 1, // Ethereum mainnet for EurC
+        locks: {
+          '0x1234567890123456789012345678901234567890': {
+            name: '10 Minute Session',
+            currency: '0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c', // EurC token address
+            recipient: '0xfda02035c04ab66769aedabcbeb3b26654e0d787' // Taho wallet
+          },
+          '0x0987654321098765432109876543210987654321': {
+            name: 'Booking Fee',
+            currency: '0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c', // EurC token address
+            recipient: '0xfda02035c04ab66769aedabcbeb3b26654e0d787' // Taho wallet
+          }
+        },
+        icon: 'https://unlock-protocol.com/static/images/svg/unlock-word-mark.svg',
+        callToAction: {
+          default: 'Pay with EurC or Credit Card',
+          expired: 'Your access has expired. Please purchase again.',
+          pending: 'Processing your EurC payment...',
+          confirmed: 'Payment successful! EurC sent to Taho wallet.',
+        },
+        theme: {
+          primaryColor: '#333333',
+          backgroundColor: '#FCF9F4',
+          accentColor: '#F0DAD0',
+        },
+        // Enable both wallet and credit card payments
+        paymentMethods: ['crypto', 'card'],
+        // Credit card configuration
+        creditCard: {
+          enabled: true,
+          autoConvert: true, // Auto-convert EUR to EurC
+          currency: 'EUR',
+          recipient: '0xfda02035c04ab66769aedabcbeb3b26654e0d787'
+        }
+      };
+      
+      // Initialize unlock protocol when ready
+      window.addEventListener('DOMContentLoaded', function() {
+        if (typeof window.unlockProtocol !== 'undefined') {
+          console.log('Unlock Protocol loaded successfully with EurC support');
+        }
+      });
+    </script>
+    
+    <!-- Unlock Protocol Script -->
+    <script src="https://paywall.unlock-protocol.com/static/unlock.latest.min.js" defer></script>
+    
+    <!-- CRITICAL: DO NOT REMOVE/MODIFY THIS COMMENT OR THE SCRIPT BELOW -->
+    <script src="https://blink.new/auto-engineer.js?projectId=ai-noreira-telegram-mini-app-fyq3qbfo" type="module"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html> 
