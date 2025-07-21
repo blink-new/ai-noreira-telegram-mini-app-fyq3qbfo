@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { Card, CardContent } from './ui/card'
 import { Button } from './ui/button'
-import PaymentModal from './PaymentModal'
+import SimplePayment, { CustomPayment } from './SimplePayment'
 import { CreditCard, Clock, Calendar } from 'lucide-react'
-import UNLOCK_CONFIG from '../config/unlock'
+import PAYMENT_CONFIG from '../config/payment'
 
 interface PricingOption {
   id: string
@@ -17,19 +17,19 @@ interface PricingOption {
 const pricingOptions: PricingOption[] = [
   {
     id: '10-min',
-    label: UNLOCK_CONFIG.locks['10-min'].name,
-    price: parseFloat(UNLOCK_CONFIG.locks['10-min'].priceEUR),
+    label: PAYMENT_CONFIG.services['10-min'].name,
+    price: parseFloat(PAYMENT_CONFIG.services['10-min'].priceEUR),
     currency: 'EUR',
-    description: `10 minute session (${UNLOCK_CONFIG.locks['10-min'].price} EurC)`,
-    lockAddress: UNLOCK_CONFIG.locks['10-min'].address
+    description: `10 minute session (${PAYMENT_CONFIG.services['10-min'].price} EurC)`,
+    lockAddress: '10-min'
   },
   {
     id: 'booking-fee',
-    label: UNLOCK_CONFIG.locks['booking-fee'].name,
-    price: parseFloat(UNLOCK_CONFIG.locks['booking-fee'].priceEUR),
+    label: PAYMENT_CONFIG.services['booking-fee'].name,
+    price: parseFloat(PAYMENT_CONFIG.services['booking-fee'].priceEUR),
     currency: 'EUR',
-    description: `Booking fee for appointment (${UNLOCK_CONFIG.locks['booking-fee'].price} EurC)`,
-    lockAddress: UNLOCK_CONFIG.locks['booking-fee'].address
+    description: `Booking fee for appointment (${PAYMENT_CONFIG.services['booking-fee'].price} EurC)`,
+    lockAddress: 'booking-fee'
   },
   {
     id: 'custom',
@@ -43,14 +43,12 @@ const pricingOptions: PricingOption[] = [
 export default function ServicesMenu() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [selectedOption, setSelectedOption] = useState<PricingOption | null>(null)
-  const [customAmount, setCustomAmount] = useState<string>('')
-  const [showCustomInput, setShowCustomInput] = useState(false)
+  const [showCustomPayment, setShowCustomPayment] = useState(false)
 
   const handlePaymentSuccess = (optionLabel: string) => {
     setSuccessMessage(`Payment for ${optionLabel} completed successfully!`)
     setSelectedOption(null)
-    setCustomAmount('')
-    setShowCustomInput(false)
+    setShowCustomPayment(false)
     
     // Clear success message after 5 seconds
     setTimeout(() => {
@@ -70,35 +68,10 @@ export default function ServicesMenu() {
 
   const handleOptionClick = (option: PricingOption) => {
     if (option.id === 'custom') {
-      setShowCustomInput(true)
+      setShowCustomPayment(true)
     } else {
       setSelectedOption(option)
     }
-  }
-
-  const handleCustomPayment = () => {
-    const amount = parseFloat(customAmount) || 0
-    if (amount <= 0) {
-      const message = 'Please enter a valid amount.'
-      if (window.Telegram?.WebApp) {
-        window.Telegram.WebApp.showAlert(message)
-      } else {
-        alert(message)
-      }
-      return
-    }
-
-    // Create a custom option for the modal
-    const customOption: PricingOption = {
-      id: 'custom',
-      label: 'Custom Payment',
-      price: amount,
-      currency: 'EUR',
-      description: `Custom payment of €${amount}`,
-      lockAddress: UNLOCK_CONFIG.locks['10-min'].address // Use existing lock for custom amounts
-    }
-
-    setSelectedOption(customOption)
   }
 
   return (
@@ -147,57 +120,42 @@ export default function ServicesMenu() {
             </Card>
           ))}
 
-          {/* Custom Amount Input */}
-          {showCustomInput && (
-            <Card className="border-primary/50">
-              <CardContent className="p-6">
-                <h3 className="font-semibold mb-4">Enter Custom Amount</h3>
-                <div className="flex space-x-3">
-                  <input
-                    type="number"
-                    placeholder="Amount in EUR"
-                    value={customAmount}
-                    onChange={(e) => setCustomAmount(e.target.value)}
-                    className="flex-1 px-4 py-3 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                    min="1"
-                    step="1"
-                    autoFocus
-                  />
-                  <Button onClick={handleCustomPayment} disabled={!customAmount || parseFloat(customAmount) <= 0}>
-                    Continue
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Amount will be converted 1:1 to EurC and sent to the Taho wallet
-                </p>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setShowCustomInput(false)
-                    setCustomAmount('')
-                  }}
-                  className="mt-3"
-                >
-                  Cancel
-                </Button>
-              </CardContent>
-            </Card>
-          )}
         </div>
 
-        {/* Payment Modal */}
+        {/* Payment Components */}
         {selectedOption && (
-          <PaymentModal
-            isOpen={!!selectedOption}
-            onClose={() => setSelectedOption(null)}
-            lockAddress={selectedOption.lockAddress!}
-            lockName={selectedOption.label}
-            price={selectedOption.price.toString()}
-            customAmount={selectedOption.id === 'custom' ? customAmount : undefined}
-            onSuccess={() => handlePaymentSuccess(selectedOption.label)}
-            onError={handlePaymentError}
-          />
+          <div className="mb-8">
+            <h3 className="text-xl font-semibold mb-4 text-center">{selectedOption.label}</h3>
+            <SimplePayment
+              serviceId={selectedOption.lockAddress!}
+              onSuccess={() => handlePaymentSuccess(selectedOption.label)}
+              onError={handlePaymentError}
+            />
+            <Button
+              variant="ghost"
+              className="w-full mt-4"
+              onClick={() => setSelectedOption(null)}
+            >
+              Back to Services
+            </Button>
+          </div>
+        )}
+
+        {showCustomPayment && (
+          <div className="mb-8">
+            <h3 className="text-xl font-semibold mb-4 text-center">Custom Payment</h3>
+            <CustomPayment
+              onSuccess={() => handlePaymentSuccess('Custom Payment')}
+              onError={handlePaymentError}
+            />
+            <Button
+              variant="ghost"
+              className="w-full mt-4"
+              onClick={() => setShowCustomPayment(false)}
+            >
+              Back to Services
+            </Button>
+          </div>
         )}
 
         {/* Payment Info */}
@@ -213,7 +171,7 @@ export default function ServicesMenu() {
               <span>💰 EurC Payments</span>
             </div>
             <div className="text-xs text-muted-foreground bg-muted/50 rounded-lg p-3">
-              <p className="font-mono">Recipient: 0xfda02035c04ab66769aedabcbeb3b26654e0d787</p>
+              <p className="font-mono">Recipient: {PAYMENT_CONFIG.recipientWallet}</p>
             </div>
           </CardContent>
         </Card>
